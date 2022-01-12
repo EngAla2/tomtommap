@@ -9,7 +9,9 @@ const App = () => {
   const [map, setMap] = useState({})
   const [longitude, setLongitude] = useState(36.09414873391526)
   const [latitude, setLatitude] = useState(32.0608498750872)
-
+  const [markPoint, setMarkPoint] = useState()
+  let _markPoint
+  let _route
   // const url = "https://api.tomtom.com/routing/1/calculateRoute/32.06088120170601%2C36.094155815142045%3A{latitude}%2C${longitude}/json?maxAlternatives=0&instructionsType=text&language=en-GB&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=none&sectionType=travelMode&callback=callback&departAt=now&traffic=true&avoid=unpavedRoads&travelMode=car&vehicleMaxSpeed=0&vehicleWeight=0&vehicleAxleWeight=0&vehicleLength=0&vehicleWidth=0&vehicleHeight=0&vehicleCommercial=false&vehicleEngineType=combustion&key=BILqah1HZszHwuWV2lQW5EdE2gzOrKPy"
   // const url = "https://api.tomtom.com/routing/1/calculateRoute/32.06088120170601%2C36.094155815142045%3A32.06076803154444%2C36.092996604951594/json?maxAlternatives=0&instructionsType=text&language=en-GB&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=none&sectionType=travelMode&callback=callback&departAt=now&traffic=true&avoid=unpavedRoads&travelMode=car&vehicleMaxSpeed=0&vehicleWeight=0&vehicleAxleWeight=0&vehicleLength=0&vehicleWidth=0&vehicleHeight=0&vehicleCommercial=false&vehicleEngineType=combustion&key=BILqah1HZszHwuWV2lQW5EdE2gzOrKPy"
 
@@ -36,31 +38,41 @@ const App = () => {
       },
       paint: {
         'line-color': '#4a90e2',
-        'line-width': 6
-
+        'line-width': 4
       }
     })
     // console.log(map.dist)
   }
 
-  const addDeliveryMarker = (lngLat, map) => {
-    const element = document.createElement('div')
-    element.className = 'marker-delivery'
-    console.log(lngLat)
-
-    new tt.Marker({
-      element: element,
-    })
-    .setLngLat(lngLat)
-    .addTo(map)
-  }
-
+  
   useEffect(() => {
     const origin = {
       lng: longitude,
       lat: latitude,
     }
-    const destinations = []
+    let destinations = []
+    
+    const addDeliveryMarker = (lngLat, map) => {
+      const element = document.createElement('div')
+      element.className = 'marker-delivery'
+      if (_markPoint) {
+        _markPoint.remove()
+        // map.removeLayer(_markPoint);
+      }
+      _markPoint = new tt.Marker({
+        element: element,
+        draggable: true,
+      })
+      _markPoint
+      .setLngLat(lngLat)
+      .addTo(map)
+      setMarkPoint(_markPoint)
+      _markPoint.on('dragend', (e) => {
+        console.log("dragend: ", e.target._lngLat)
+        destinations=[e.target._lngLat]
+        recalculateRoutes()
+    });
+    }
 
     let map = tt.map({
       key: "BILqah1HZszHwuWV2lQW5EdE2gzOrKPy",
@@ -132,32 +144,33 @@ const App = () => {
     }
 
     const recalculateRoutes = async () => {
-    let distance = await fetch(`https://api.tomtom.com/routing/1/calculateRoute/36.09414873391526,32.0608498750872:${latitude},${longitude}/json?maxAlternatives=0&instructionsType=text&language=en-GB&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=none&sectionType=travelMode&callback=callback&departAt=now&traffic=true&avoid=unpavedRoads&travelMode=car&vehicleMaxSpeed=0&vehicleWeight=0&vehicleAxleWeight=0&vehicleLength=0&vehicleWidth=0&vehicleHeight=0&vehicleCommercial=false&vehicleEngineType=combustion&key=BILqah1HZszHwuWV2lQW5EdE2gzOrKPy`
-    ).then((a)=> {
-            // console.log(a.clone().json().routss)
-            // console.log("=========================")
-            // // console.log(a.clone().json().routss[1])
+    //  let distance  = await fetch(`https://api.tomtom.com/routing/1/calculateRoute/36.09414873391526,32.0608498750872:${latitude},${longitude}/json?maxAlternatives=0&instructionsType=text&language=en-GB&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=none&sectionType=travelMode&callback=callback&departAt=now&traffic=true&avoid=unpavedRoads&travelMode=car&vehicleMaxSpeed=0&vehicleWeight=0&vehicleAxleWeight=0&vehicleLength=0&vehicleWidth=0&vehicleHeight=0&vehicleCommercial=false&vehicleEngineType=combustion&key=BILqah1HZszHwuWV2lQW5EdE2gzOrKPy`
+    // ).catch(e => console.log("???????", e)).then((a)=> {
+    //         // console.log(a.clone().json().routss)
+    //         // console.log("=========================")
+    //         // // console.log(a.clone().json().routss[1])
 
-            // console.log(a.json())
+    //         // console.log(a.json())
 
-            // console.log("---------------------------")
+    //         // console.log("---------------------------")
 
-            // console.log(a.clone().json())
+    //         // console.log(a.clone().json())
 
 
-            // console.log(a.lengthInMeters)
-            // console.log(a)
-            // console.log(a.clone().json())
-            return a.clone().json()
+    //         // console.log(a.lengthInMeters)
+    //         // console.log(a)
+    //         // console.log(a.clone().json())
+    //         return a.clone().json()
 
-          }).then(data => {
+    //       }).then(data => {
 
-            console.log("data::::", data)
-            console.log("distance::::", distance/1000)
+    //         console.log("data::::", data)
+    //         // console.log("distance::::", distance/1000)
 
-            console.log(data.routes[0].legs[0].summary)
-            // return data.routes[0].legs[0].summary.lengthInMeters
-          })
+    //         console.log(data.routes[0].legs[0].summary)
+    //         // return data.routes[0].legs[0].summary.lengthInMeters
+    //       })
+    //         console.log("---------------------------", distance)
 
 
 
@@ -171,6 +184,7 @@ const App = () => {
           })
           .then((routeData) => {
             const geoJson = routeData.toGeoJson()
+            console.log(geoJson)
             drawRoute(geoJson, map)
         })
       })
@@ -178,7 +192,7 @@ const App = () => {
 
 
     map.on('click', (e) => {
-      destinations.push(e.lngLat)
+      destinations=[e.lngLat]
       addDeliveryMarker(e.lngLat, map)
       recalculateRoutes()
 
