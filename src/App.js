@@ -44,15 +44,16 @@ const App = () => {
     // console.log(map.dist)
   }
 
-  
+
   useEffect(() => {
     const origin = {
       lng: longitude,
       lat: latitude,
     }
     let destinations = []
-    
+
     const addDeliveryMarker = (lngLat, map) => {
+      console.log("lngLat: ", lngLat)
       const element = document.createElement('div')
       element.className = 'marker-delivery'
       if (_markPoint) {
@@ -64,14 +65,15 @@ const App = () => {
         draggable: true,
       })
       _markPoint
-      .setLngLat(lngLat)
-      .addTo(map)
+        .setLngLat(lngLat)
+        .addTo(map)
       setMarkPoint(_markPoint)
+
       _markPoint.on('dragend', (e) => {
         console.log("dragend: ", e.target._lngLat)
-        destinations=[e.target._lngLat]
+        destinations = [e.target._lngLat]
         recalculateRoutes()
-    });
+      });
     }
 
     let map = tt.map({
@@ -112,7 +114,9 @@ const App = () => {
     addMarker()
 
     const sortDestinations = (locations) => {
+      console.log(locations)
       const pointsForDestinations = locations.map((destination) => {
+        console.log("?????", destination)
         return convertToPoints(destination)
       })
       const callParameters = {
@@ -121,56 +125,68 @@ const App = () => {
         origins: [convertToPoints(origin)],
       }
 
-    return new Promise((resolve, reject) => {
-      ttapi.services
-        .matrixRouting(callParameters)
-        .then((matrixAPIResults) => {
-          const results = matrixAPIResults.matrix[0]
-          const resultsArray = results.map((result, index) => {
-            return {
-              location: locations[index],
-              drivingtime: result.response.routeSummary.travelTimeInSeconds,
-            }
+      return new Promise((resolve, reject) => {
+        ttapi.services
+          .matrixRouting(callParameters)
+          .then((matrixAPIResults) => {
+            const results = matrixAPIResults.matrix[0]
+            const resultsArray = results.map((result, index) => {
+              return {
+                location: locations[index],
+                drivingtime: result.response.routeSummary.travelTimeInSeconds,
+              }
+            })
+            resultsArray.sort((a, b) => {
+              return a.drivingtime - b.drivingtime
+            })
+            const sortedLocations = resultsArray.map((result) => {
+              return result.location
+            })
+            resolve(sortedLocations)
           })
-          resultsArray.sort((a, b) => {
-            return a.drivingtime - b.drivingtime
-          })
-          const sortedLocations = resultsArray.map((result) => {
-            return result.location
-          })
-          resolve(sortedLocations)
-        })
       })
+    }
+    console.log(navigator)
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(function(position) {
+        let coordinates = {lng:position.coords.longitude, lat:position.coords.latitude} 
+        addDeliveryMarker(coordinates, map)
+        destinations = [coordinates]
+        recalculateRoutes()
+         console.log("Latitude is :", position.coords);
+          console.log("Longitude is :", position.coords.longitude);
+         });    } else {
+      console.log("Not Available")
     }
 
     const recalculateRoutes = async () => {
-    //  let distance  = await fetch(`https://api.tomtom.com/routing/1/calculateRoute/36.09414873391526,32.0608498750872:${latitude},${longitude}/json?maxAlternatives=0&instructionsType=text&language=en-GB&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=none&sectionType=travelMode&callback=callback&departAt=now&traffic=true&avoid=unpavedRoads&travelMode=car&vehicleMaxSpeed=0&vehicleWeight=0&vehicleAxleWeight=0&vehicleLength=0&vehicleWidth=0&vehicleHeight=0&vehicleCommercial=false&vehicleEngineType=combustion&key=BILqah1HZszHwuWV2lQW5EdE2gzOrKPy`
-    // ).catch(e => console.log("???????", e)).then((a)=> {
-    //         // console.log(a.clone().json().routss)
-    //         // console.log("=========================")
-    //         // // console.log(a.clone().json().routss[1])
+      //  let distance  = await fetch(`https://api.tomtom.com/routing/1/calculateRoute/36.09414873391526,32.0608498750872:${latitude},${longitude}/json?maxAlternatives=0&instructionsType=text&language=en-GB&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=none&sectionType=travelMode&callback=callback&departAt=now&traffic=true&avoid=unpavedRoads&travelMode=car&vehicleMaxSpeed=0&vehicleWeight=0&vehicleAxleWeight=0&vehicleLength=0&vehicleWidth=0&vehicleHeight=0&vehicleCommercial=false&vehicleEngineType=combustion&key=BILqah1HZszHwuWV2lQW5EdE2gzOrKPy`
+      // ).catch(e => console.log("???????", e)).then((a)=> {
+      //         // console.log(a.clone().json().routss)
+      //         // console.log("=========================")
+      //         // // console.log(a.clone().json().routss[1])
 
-    //         // console.log(a.json())
+      //         // console.log(a.json())
 
-    //         // console.log("---------------------------")
+      //         // console.log("---------------------------")
 
-    //         // console.log(a.clone().json())
+      //         // console.log(a.clone().json())
 
 
-    //         // console.log(a.lengthInMeters)
-    //         // console.log(a)
-    //         // console.log(a.clone().json())
-    //         return a.clone().json()
+      //         // console.log(a.lengthInMeters)
+      //         // console.log(a)
+      //         // console.log(a.clone().json())
+      //         return a.clone().json()
 
-    //       }).then(data => {
+      //       }).then(data => {
 
-    //         console.log("data::::", data)
-    //         // console.log("distance::::", distance/1000)
+      //         console.log("data::::", data)
+      //         // console.log("distance::::", distance/1000)
 
-    //         console.log(data.routes[0].legs[0].summary)
-    //         // return data.routes[0].legs[0].summary.lengthInMeters
-    //       })
-    //         console.log("---------------------------", distance)
+      //         console.log(data.routes[0].legs[0].summary)
+      //         // return data.routes[0].legs[0].summary.lengthInMeters
+      //       })
+      //         console.log("---------------------------", distance)
 
 
 
@@ -184,15 +200,15 @@ const App = () => {
           })
           .then((routeData) => {
             const geoJson = routeData.toGeoJson()
-            console.log(geoJson)
+            console.log("???/////",geoJson)
             drawRoute(geoJson, map)
-        })
+          })
       })
     }
 
 
     map.on('click', (e) => {
-      destinations=[e.lngLat]
+      destinations = [e.lngLat]
       addDeliveryMarker(e.lngLat, map)
       recalculateRoutes()
 
@@ -206,9 +222,9 @@ const App = () => {
       {map && (
         <div className="app">
           <div ref={mapElement} className="map" />
-           {/* <div className="search-bar"> */}
-            {/* <h1>Where to?</h1> */}
-            {/* <input
+          {/* <div className="search-bar"> */}
+          {/* <h1>Where to?</h1> */}
+          {/* <input
               type="text"
               id="longitude"
               className="longitude"
